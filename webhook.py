@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 import os
+import sys
 import json
 import logging
 from datetime import datetime, timedelta, date
 from functools import wraps
 from flask import Flask, request, abort, jsonify, render_template, send_from_directory, redirect, url_for, session
+
+# 將當前目錄加入sys.path，確保可以導入當前目錄下的模塊
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 更新LINE Bot SDK導入
 from linebot.v3 import WebhookHandler
@@ -443,8 +447,8 @@ if __name__ == "__main__":
     
     # 解析命令行參數
     parser = argparse.ArgumentParser(description='啟動LINE機器人webhook服務')
-    parser.add_argument('--port', type=int, default=5000, help='服務端口號')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='服務主機地址')
+    parser.add_argument('--port', type=int, default=8080, help='服務端口號')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='服務主機地址')
     args = parser.parse_args()
     
     # 記錄環境變數情況
@@ -453,12 +457,15 @@ if __name__ == "__main__":
     logger.info(f"環境變數: LINE_CHANNEL_ACCESS_TOKEN={os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '未設置')[0:5]}...")
     logger.info(f"環境變數: PORT={os.environ.get('PORT', '未設置')}")
     
-    # 啟動應用
+    # 獲取環境變數設置的端口或使用參數設置的端口
     port = int(os.environ.get("PORT", args.port))
-    logger.info(f"啟動應用，監聽 {args.host}:{port}")
+    host = os.environ.get("HOST", args.host)
+    
+    logger.info(f"啟動應用，監聽 {host}:{port}")
     
     try:
-        app.run(host=args.host, port=port, debug=False, threaded=True)
+        # 確保應用程序在0.0.0.0:8080上監聽
+        app.run(host=host, port=port, debug=False, threaded=True)
     except Exception as e:
         logger.error(f"啟動應用時發生錯誤: {str(e)}")
 

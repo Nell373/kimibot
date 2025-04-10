@@ -27,10 +27,15 @@ RUN chmod +x start.sh
 # 初始化資料庫
 RUN python init_db.py
 
+# 設置環境變數
+ENV PYTHONPATH="/app"
+ENV HOST="0.0.0.0"
+ENV PORT="8080"
+
 # 創建supervisord配置文件
 RUN echo "[supervisord]\nnodaemon=true\n\n\
-[program:webapp]\ncommand=/app/start.sh\ndirectory=/app\nautostart=true\nautorestart=true\n\n\
-[program:scheduler]\ncommand=python -m scheduler.reminder_scheduler\ndirectory=/app\nautostart=true\nautorestart=true" > /etc/supervisor/conf.d/supervisord.conf
+[program:webapp]\ncommand=/app/start.sh\ndirectory=/app\nautostart=true\nautorestart=true\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\nstderr_logfile=/dev/stderr\nstderr_logfile_maxbytes=0\n\n\
+[program:scheduler]\ncommand=python -m scheduler.reminder_scheduler\ndirectory=/app\nautostart=true\nautorestart=true\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\nstderr_logfile=/dev/stderr\nstderr_logfile_maxbytes=0" > /etc/supervisor/conf.d/supervisord.conf
 
 # 暴露端口
 EXPOSE 8080

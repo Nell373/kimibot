@@ -5,6 +5,8 @@ kill_timeout = 5
 
 [env]
   PORT = "8080"
+  HOST = "0.0.0.0"
+  PYTHONPATH = "/app"
   PYTHONUNBUFFERED = "1"
   FLASK_ENV = "production"
   # 添加其他必要環境變數，但隱藏實際值，通過flyctl secrets設置
@@ -20,7 +22,7 @@ kill_timeout = 5
 # 添加進程保持配置，防止應用自動關閉
 [processes]
   # 直接使用Python運行webapp，避免Gunicorn啟動問題
-  app = "python webhook.py --port=8080 --host=0.0.0.0"
+  app = "/app/start.sh"
   # 添加保持系統運行的後台進程
   cron = "python -m scheduler.reminder_scheduler"
 
@@ -28,35 +30,15 @@ kill_timeout = 5
   source = "line_bot_data"
   destination = "/app/database"
 
-[[services]]
-  protocol = "tcp"
+[http_service]
   internal_port = 8080
-  processes = ["app"]  # 指定使用 app 進程
-  
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
 
-  [[services.ports]]
-    force_https = true
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-# 優化後台進程服務配置，減少運行機器數量
-[[services]]
-  protocol = "tcp"
-  internal_port = 8080
-  processes = ["cron"]  # 指定使用 cron 進程
-  auto_stop_machines = true  # 允許機器自動停止，節省資源
-  auto_start_machines = false  # 不自動啟動多台機器
-  min_machines_running = 1  # 確保只有1台機器運行排程器
-  
-  # 添加端口配置，解決"必須暴露至少一個端口"的警告
-  [[services.ports]]
-    handlers = ["http"]
-    port = 8080 
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1 
