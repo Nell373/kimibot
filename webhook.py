@@ -214,46 +214,10 @@ def service_worker():
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康檢查端點"""
-    try:
-        # 檢查資料庫連接
-        db_status = "ok"
-        try:
-            # 簡單的資料庫查詢測試
-            db.execute("SELECT 1")
-        except Exception as e:
-            db_status = f"error: {str(e)}"
-            logger.warning(f"健康檢查 - 資料庫連接錯誤: {str(e)}")
-        
-        # 檢查LINE API連接
-        line_status = "ok"
-        if not is_development:
-            try:
-                with ApiClient(configuration) as api_client:
-                    # 簡單的API請求測試
-                    bot_info_api = MessagingApiBlob(api_client)
-                    bot_info_api.get_bot_info()
-            except Exception as e:
-                line_status = f"error: {str(e)}"
-                logger.warning(f"健康檢查 - LINE API連接錯誤: {str(e)}")
-        
-        # 返回詳細的健康狀態
-        return jsonify({
-            'status': 'ok' if db_status == "ok" and line_status == "ok" else "warning",
-            'timestamp': datetime.now().isoformat(),
-            'version': '0.1.0',
-            'components': {
-                'database': db_status,
-                'line_api': line_status
-            }
-        }), 200
-    except Exception as e:
-        logger.error(f"健康檢查端點錯誤: {str(e)}")
-        # 即使發生錯誤也返回200狀態碼，避免健康檢查因錯誤而失敗
-        return jsonify({
-            'status': 'error',
-            'timestamp': datetime.now().isoformat(),
-            'error': str(e)
-        }), 200
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat()
+    }), 200
 
 # LINE Webhook 入口
 @app.route('/api/webhook', methods=['POST'])

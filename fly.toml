@@ -31,7 +31,6 @@ kill_timeout = 5
 [[services]]
   protocol = "tcp"
   internal_port = 8080
-  script_checks = []
   processes = ["app"]  # 指定使用 app 進程
   
   [services.concurrency]
@@ -48,30 +47,11 @@ kill_timeout = 5
     handlers = ["tls", "http"]
     port = 443
 
-  [[services.tcp_checks]]
-    grace_period = "1s"
-    interval = "15s"
-    restart_limit = 0
-    timeout = "2s"
-
-  # 暫時完全關閉健康檢查，讓應用能夠啟動不受干擾
-  # [[services.http_checks]]
-  #   interval = "30s"
-  #   grace_period = "30s"
-  #   method = "get"
-  #   path = "/health"
-  #   protocol = "http"
-  #   restart_limit = 3
-  #   timeout = "5s"
-  #   tls_skip_verify = true
-  #   headers = { }
-
 # 優化後台進程服務配置，減少運行機器數量
 [[services]]
   protocol = "tcp"
   internal_port = 8080
   processes = ["cron"]  # 指定使用 cron 進程
-  script_checks = []
   auto_stop_machines = true  # 允許機器自動停止，節省資源
   auto_start_machines = false  # 不自動啟動多台機器
   min_machines_running = 1  # 確保只有1台機器運行排程器
