@@ -5,13 +5,20 @@ import logging
 from datetime import datetime, timedelta, date
 from functools import wraps
 from flask import Flask, request, abort, jsonify, render_template, send_from_directory, redirect, url_for, session
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
-    FlexSendMessage, BubbleContainer, BoxComponent,
-    PostbackEvent
+
+# 更新LINE Bot SDK導入
+from linebot.v3 import WebhookHandler
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.webhooks import (
+    MessageEvent, PostbackEvent, 
+    TextMessageContent, UserSource
 )
+from linebot.v3.messaging import (
+    Configuration, ApiClient, MessagingApi,
+    TextMessage, FlexMessage, FlexContainer,
+    ReplyMessageRequest
+)
+
 from dotenv import load_dotenv
 import requests
 import sqlite3
@@ -46,16 +53,29 @@ app.secret_key = os.environ.get('SESSION_SECRET', os.urandom(24).hex())
 
 # 初始化 LINE API
 try:
-    line_bot_api = LineBotApi(os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', ''))
+    # 使用新版SDK初始化
+    configuration = Configuration(
+        access_token=os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '')
+    )
     handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET', ''))
+    
+    # 創建API客戶端
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
     
     # 檢查憑證是否有效
     if not is_development:
-        line_bot_api.get_bot_info()  # 測試連接
+        # 測試連接 (在v3中，不同的方式測試連接)
+        with ApiClient(configuration) as api_client:
+            from linebot.v3.messaging import MessagingApiBlob
+            bot_info_api = MessagingApiBlob(api_client)
+            # 獲取機器人資訊
+            bot_info_api.get_bot_info()
         logger.info("已成功連接到 LINE 平台")
     else:
         logger.warning("開發環境模式啟動，部分功能將被模擬")
-except LineBotApiError as e:
+
+except Exception as e:
     logger.error(f"連接 LINE 平台失敗: {str(e)}")
     if is_development:
         logger.warning("在開發環境中繼續運行，使用模擬物件")
@@ -76,9 +96,8 @@ message_handler = MessageHandler(line_bot_api, db)
 # 初始化提醒排程器
 reminder_scheduler = ReminderScheduler(line_bot_api, db)
 
-# 啟動提醒排程器
-@app.before_first_request
-def start_scheduler():
+# 定義啟動時的初始化函數(替代 @app.before_first_request 裝飾器)
+def start_scheduler_and_setup():
     """服務啟動後，啟動提醒排程器"""
     logger.info("啟動提醒排程器...")
     reminder_scheduler.start()
@@ -97,259 +116,9 @@ def start_scheduler():
     else:
         logger.info("開發環境中跳過創建快速選單")
 
-# 主頁路由
-@app.route('/')
-def index():
-    """主頁"""
-    return render_template('index.html')
-
-# 登入頁面
-@app.route('/login')
-def login_page():
-    """登入頁面"""
-    # 如果已經登入，重定向到儀表板
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
-    return render_template('login.html')
-
-# 儀表板頁面
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """儀表板頁面 - 需登入保護"""
-    return render_template('dashboard.html')
-
-# 離線頁面
-@app.route('/offline')
-def offline():
-    """離線頁面"""
-    return render_template('offline.html')
-
-# 靜態文件路由
-@app.route('/static/manifest.json')
-def manifest():
-    """PWA manifest 文件"""
-    return send_from_directory('static', 'manifest.json')
-
-@app.route('/static/sw.js')
-def service_worker():
-    """PWA Service Worker"""
-    return send_from_directory('static', 'sw.js')
-
-# 健康檢查端點 (用於 Fly.io 監控)
-@app.route('/health', methods=['GET'])
-def health_check():
-    """健康檢查端點"""
-    return jsonify({
-        'status': 'ok',
-        'timestamp': datetime.now().isoformat(),
-        'version': '0.1.0'
-    })
-
-# LINE Webhook 入口
-@app.route('/api/webhook', methods=['POST'])
-def webhook():
-    """LINE Webhook 入口點"""
-    # 取得 X-Line-Signature 標頭
-    signature = request.headers.get('X-Line-Signature')
-    
-    # 取得請求主體
-    body = request.get_data(as_text=True)
-    
-    logger.info('Request body: %s', body)
-    
-    # 處理開發環境的測試請求
-    if is_development:
-        # 檢查是否為測試請求
-        try:
-            data = json.loads(body)
-            is_test_request = any(
-                event.get('source', {}).get('userId') == 'test_user_id' 
-                for event in data.get('events', [])
-            )
-            
-            if is_test_request:
-                logger.warning("開發環境檢測到測試請求")
-                
-                # 如果提供了有效的簽名，嘗試正常處理
-                if signature:
-                    try:
-                        handler.handle(body, signature)
-                        return 'OK (Development Mode - Verified)'
-                    except InvalidSignatureError:
-                        logger.warning("測試請求的簽名無效，將手動處理事件")
-                else:
-                    logger.warning("測試請求未提供簽名，將手動處理事件")
-                
-                # 手動處理事件
-                for event in data.get('events', []):
-                    # 確保測試用戶存在於資料庫
-                    ensure_user_exists('test_user_id')
-                    
-                    if event.get('type') == 'message' and event.get('message', {}).get('type') == 'text':
-                        # 模擬文字消息事件
-                        from linebot.models.events import MessageEvent
-                        from linebot.models.messages import TextMessage
-                        from linebot.models.sources import SourceUser
-                        
-                        message_event = MessageEvent(
-                            message=TextMessage(id=event['message']['id'], text=event['message']['text']),
-                            reply_token=event['replyToken'],
-                            source=SourceUser(user_id=event['source']['userId']),
-                            timestamp=event.get('timestamp', int(datetime.now().timestamp() * 1000))
-                        )
-                        
-                        # 處理文字消息
-                        handle_text_message(message_event)
-                        
-                    elif event.get('type') == 'postback':
-                        # 模擬 Postback 事件
-                        from linebot.models.events import PostbackEvent
-                        from linebot.models.sources import SourceUser
-                        from linebot.models.postback import Postback
-                        
-                        postback_event = PostbackEvent(
-                            reply_token=event['replyToken'],
-                            source=SourceUser(user_id=event['source']['userId']),
-                            postback=Postback(data=event['postback'].get('data')),
-                            timestamp=event.get('timestamp', int(datetime.now().timestamp() * 1000))
-                        )
-                        
-                        # 處理 Postback
-                        handle_postback(postback_event)
-                
-                return 'OK (Development Mode - Test User)'
-        except Exception as e:
-            logger.error(f"處理開發環境測試請求時出錯: {str(e)}")
-    
-    # 正常環境處理 (或開發環境非測試請求)
-    try:
-        # 驗證簽名
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        logger.error('Invalid signature')
-        abort(400)
-    
-    return 'OK'
-
-# 處理文字訊息
-@handler.add(MessageEvent, message=TextMessage)
-def handle_text_message(event):
-    """處理文字訊息"""
-    try:
-        user_id = event.source.user_id
-        reply_token = event.reply_token
-        text = event.message.text
-        
-        # 確保用戶存在
-        user = ensure_user_exists(user_id)
-        
-        # 使用 MessageHandler 處理文字訊息
-        message_handler = MessageHandler(line_bot_api, db)
-        
-        # 解析文字訊息
-        parser = TextParser()
-        result = parser.parse_text(text)
-        
-        if result:
-            result_type = result.get("type")
-            
-            if result_type == "accounting":
-                # 處理記帳
-                message_handler.handle_accounting(user_id, reply_token, result.get("data"))
-            elif result_type == "reminder":
-                # 處理提醒
-                message_handler.handle_reminder(user_id, reply_token, result.get("data"))
-            elif result_type == "query":
-                # 處理查詢
-                message_handler.handle_query(reply_token, result.get("data"))
-            elif result_type == "account":
-                # 處理帳戶操作
-                message_handler.handle_account(user_id, reply_token, result.get("data"))
-            else:
-                # 其他類型或無法識別的指令
-                message_handler.handle_conversation(reply_token, result.get("data", {}).get("message", "我不太明白您的意思，請嘗試使用更明確的指令。"))
-        else:
-            # 若無法解析，顯示錯誤訊息
-            message_handler.handle_conversation(reply_token, "抱歉，我沒有理解您的指令，請嘗試使用更明確的表達方式。")
-    
-    except Exception as e:
-        logger.error(f"處理文字訊息時發生錯誤: {str(e)}")
-        if reply_token:
-            line_bot_api.reply_message(
-                reply_token,
-                TextSendMessage(text="抱歉，處理您的訊息時出現了問題，請稍後再試。")
-            )
-
-# 處理 Postback 事件
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    """處理用戶的 Postback 事件（選擇按鈕等）"""
-    user_id = event.source.user_id
-    
-    # 確保用戶存在於資料庫
-    ensure_user_exists(user_id)
-    
-    try:
-        # 使用訊息處理器處理 postback
-        message_handler.handle_postback(event)
-        
-        logger.info(f"已處理用戶 {user_id} 的 postback")
-    except Exception as e:
-        logger.error('Error processing postback: %s', str(e))
-        
-        # 在生產環境才嘗試發送錯誤訊息
-        if not is_development:
-            try:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text=f"抱歉，處理您的選擇時發生錯誤：{str(e)}")
-                )
-            except Exception as reply_error:
-                logger.error('Error sending error message: %s', str(reply_error))
-
-def ensure_user_exists(user_id):
-    """確保用戶存在於資料庫中"""
-    user = db.get_user(user_id)
-    
-    if not user:
-        try:
-            # 從 LINE 獲取用戶資料
-            if user_id == 'test_user_id' and is_development:
-                # 測試用戶
-                db.create_user(user_id, "測試用戶")
-                logger.info(f"測試用戶已創建: 測試用戶 ({user_id})")
-            else:
-                # 正常用戶
-                profile = line_bot_api.get_profile(user_id)
-                db.create_user(user_id, profile.display_name)
-                logger.info(f"新用戶已創建: {profile.display_name} ({user_id})")
-        except Exception as e:
-            logger.error('Error getting user profile: %s', str(e))
-            # 創建一個默認用戶名稱
-            db.create_user(user_id, f"User_{user_id[:8]}")
-            logger.info(f"新用戶已創建 (使用預設名稱): User_{user_id[:8]}")
-
-# 錯誤處理
-@app.errorhandler(404)
-def page_not_found(e):
-    """404 頁面"""
-    return render_template('offline.html'), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    """500 錯誤頁面"""
-    logger.error(f"伺服器錯誤: {str(e)}")
-    return jsonify({"error": "伺服器內部錯誤"}), 500
-
-# Fly.io 部署設置
-if __name__ == "__main__":
-    # 設定開發環境變數
-    if is_development:
-        os.environ['FLASK_ENV'] = 'development'
-    
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('LOG_LEVEL') == 'debug')
+# 在應用啟動時執行初始化
+with app.app_context():
+    start_scheduler_and_setup()
 
 # 登入保護裝飾器
 def login_required(f):
@@ -401,6 +170,333 @@ def verify_token(token):
         return user_id
     except:
         return None
+
+# 主頁路由
+@app.route('/')
+def index():
+    """主頁"""
+    return render_template('index.html')
+
+# 登入頁面
+@app.route('/login')
+def login_page():
+    """登入頁面"""
+    # 如果已經登入，重定向到儀表板
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+# 儀表板頁面
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """儀表板頁面 - 需登入保護"""
+    return render_template('dashboard.html')
+
+# 離線頁面
+@app.route('/offline')
+def offline():
+    """離線頁面"""
+    return render_template('offline.html')
+
+# 靜態文件路由
+@app.route('/static/manifest.json')
+def manifest():
+    """PWA manifest 文件"""
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/static/sw.js')
+def service_worker():
+    """PWA Service Worker"""
+    return send_from_directory('static', 'sw.js')
+
+# 健康檢查端點 (用於 Fly.io 監控)
+@app.route('/health', methods=['GET'])
+def health_check():
+    """健康檢查端點"""
+    try:
+        # 檢查資料庫連接
+        db_status = "ok"
+        try:
+            # 簡單的資料庫查詢測試
+            db.execute("SELECT 1")
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+            logger.warning(f"健康檢查 - 資料庫連接錯誤: {str(e)}")
+        
+        # 檢查LINE API連接
+        line_status = "ok"
+        if not is_development:
+            try:
+                with ApiClient(configuration) as api_client:
+                    # 簡單的API請求測試
+                    bot_info_api = MessagingApiBlob(api_client)
+                    bot_info_api.get_bot_info()
+            except Exception as e:
+                line_status = f"error: {str(e)}"
+                logger.warning(f"健康檢查 - LINE API連接錯誤: {str(e)}")
+        
+        # 返回詳細的健康狀態
+        return jsonify({
+            'status': 'ok' if db_status == "ok" and line_status == "ok" else "warning",
+            'timestamp': datetime.now().isoformat(),
+            'version': '0.1.0',
+            'components': {
+                'database': db_status,
+                'line_api': line_status
+            }
+        }), 200
+    except Exception as e:
+        logger.error(f"健康檢查端點錯誤: {str(e)}")
+        # 即使發生錯誤也返回200狀態碼，避免健康檢查因錯誤而失敗
+        return jsonify({
+            'status': 'error',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 200
+
+# LINE Webhook 入口
+@app.route('/api/webhook', methods=['POST'])
+def webhook():
+    """LINE Webhook 入口點"""
+    # 取得 X-Line-Signature 標頭
+    signature = request.headers.get('X-Line-Signature')
+    
+    # 取得請求主體
+    body = request.get_data(as_text=True)
+    
+    logger.info('Request body: %s', body)
+    
+    # 處理開發環境的測試請求
+    if is_development:
+        # 檢查是否為測試請求
+        try:
+            data = json.loads(body)
+            is_test_request = any(
+                event.get('source', {}).get('userId') == 'test_user_id' 
+                for event in data.get('events', [])
+            )
+            
+            if is_test_request:
+                logger.warning("開發環境檢測到測試請求")
+                
+                # 如果提供了有效的簽名，嘗試正常處理
+                if signature:
+                    try:
+                        handler.handle(body, signature)
+                        return 'OK (Development Mode - Verified)'
+                    except InvalidSignatureError:
+                        logger.warning("測試請求的簽名無效，將手動處理事件")
+                else:
+                    logger.warning("測試請求未提供簽名，將手動處理事件")
+                
+                # 手動處理事件
+                for event in data.get('events', []):
+                    # 確保測試用戶存在於資料庫
+                    ensure_user_exists('test_user_id')
+                    
+                    if event.get('type') == 'message' and event.get('message', {}).get('type') == 'text':
+                        # 模擬文字消息事件
+                        from linebot.v3.webhooks import MessageEvent, TextMessageContent, UserSource
+                        
+                        message_event = MessageEvent(
+                            message=TextMessageContent(id=event['message']['id'], text=event['message']['text']),
+                            reply_token=event['replyToken'],
+                            source=UserSource(user_id=event['source']['userId']),
+                            timestamp=event.get('timestamp', int(datetime.now().timestamp() * 1000))
+                        )
+                        
+                        # 處理文字消息
+                        handle_text_message(message_event)
+                        
+                    elif event.get('type') == 'postback':
+                        # 模擬 Postback 事件
+                        from linebot.v3.webhooks import PostbackEvent, UserSource, Postback
+                        
+                        postback_event = PostbackEvent(
+                            reply_token=event['replyToken'],
+                            source=UserSource(user_id=event['source']['userId']),
+                            postback=Postback(data=event['postback'].get('data')),
+                            timestamp=event.get('timestamp', int(datetime.now().timestamp() * 1000))
+                        )
+                        
+                        # 處理 Postback
+                        handle_postback(postback_event)
+                
+                return 'OK (Development Mode - Test User)'
+        except Exception as e:
+            logger.error(f"處理開發環境測試請求時出錯: {str(e)}")
+    
+    # 正常環境處理 (或開發環境非測試請求)
+    try:
+        # 驗證簽名
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        logger.error('Invalid signature')
+        abort(400)
+    
+    return 'OK'
+
+# 處理文字訊息
+@handler.add(MessageEvent, message=TextMessageContent)
+def handle_text_message(event):
+    """處理文字訊息"""
+    try:
+        user_id = event.source.user_id
+        reply_token = event.reply_token
+        text = event.message.text
+        
+        # 確保用戶存在
+        user = ensure_user_exists(user_id)
+        
+        # 使用 MessageHandler 處理文字訊息
+        message_handler = MessageHandler(line_bot_api, db)
+        
+        # 解析文字訊息
+        parser = TextParser()
+        result = parser.parse_text(text)
+        
+        if result:
+            result_type = result.get("type")
+            
+            if result_type == "accounting":
+                # 處理記帳
+                message_handler.handle_accounting(user_id, reply_token, result.get("data"))
+            elif result_type == "reminder":
+                # 處理提醒
+                message_handler.handle_reminder(user_id, reply_token, result.get("data"))
+            elif result_type == "query":
+                # 處理查詢
+                message_handler.handle_query(reply_token, result.get("data"))
+            elif result_type == "account":
+                # 處理帳戶操作
+                message_handler.handle_account(user_id, reply_token, result.get("data"))
+            else:
+                # 其他類型或無法識別的指令
+                message_handler.handle_conversation(reply_token, result.get("data", {}).get("message", "我不太明白您的意思，請嘗試使用更明確的指令。"))
+        else:
+            # 若無法解析，顯示錯誤訊息
+            message_handler.handle_conversation(reply_token, "抱歉，我沒有理解您的指令，請嘗試使用更明確的表達方式。")
+    
+    except Exception as e:
+        logger.error(f"處理文字訊息時發生錯誤: {str(e)}")
+        if reply_token:
+            try:
+                # 使用新版SDK的方式發送回覆
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[TextMessage(text="抱歉，處理您的訊息時出現了問題，請稍後再試。")]
+                    )
+                )
+            except Exception as reply_error:
+                logger.error(f"發送錯誤訊息失敗: {str(reply_error)}")
+
+# 處理 Postback 事件
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    """處理用戶的 Postback 事件（選擇按鈕等）"""
+    user_id = event.source.user_id
+    
+    # 確保用戶存在於資料庫
+    ensure_user_exists(user_id)
+    
+    try:
+        # 使用訊息處理器處理 postback
+        message_handler.handle_postback(event)
+        
+        logger.info(f"已處理用戶 {user_id} 的 postback")
+    except Exception as e:
+        logger.error('Error processing postback: %s', str(e))
+        
+        # 在生產環境才嘗試發送錯誤訊息
+        if not is_development:
+            try:
+                # 使用新版SDK的方式發送回覆
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=f"抱歉，處理您的選擇時發生錯誤：{str(e)}")]
+                    )
+                )
+            except Exception as reply_error:
+                logger.error('Error sending error message: %s', str(reply_error))
+
+def ensure_user_exists(user_id):
+    """確保用戶存在於資料庫中"""
+    user = db.get_user(user_id)
+    
+    if not user:
+        try:
+            # 從 LINE 獲取用戶資料
+            if user_id == 'test_user_id' and is_development:
+                # 測試用戶
+                db.create_user(user_id, "測試用戶")
+                logger.info(f"測試用戶已創建: 測試用戶 ({user_id})")
+            else:
+                # 正常用戶
+                profile = line_bot_api.get_profile(user_id)
+                db.create_user(user_id, profile.display_name)
+                logger.info(f"新用戶已創建: {profile.display_name} ({user_id})")
+        except Exception as e:
+            logger.error('Error getting user profile: %s', str(e))
+            # 創建一個默認用戶名稱
+            db.create_user(user_id, f"User_{user_id[:8]}")
+            logger.info(f"新用戶已創建 (使用預設名稱): User_{user_id[:8]}")
+
+# 錯誤處理
+@app.errorhandler(404)
+def page_not_found(e):
+    """404 頁面"""
+    return render_template('offline.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    """500 錯誤頁面"""
+    logger.error(f"伺服器錯誤: {str(e)}")
+    return jsonify({"error": "伺服器內部錯誤"}), 500
+
+# Fly.io 部署設置
+if __name__ == "__main__":
+    import argparse
+    import ssl
+    import sys
+    
+    # 配置詳細的日誌信息
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.stdout  # 確保日誌輸出到標準輸出
+    )
+    
+    # 禁用SSL證書驗證（僅用於調試）
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+        ssl._create_default_https_context = _create_unverified_https_context
+        logger.info("已禁用SSL證書驗證，僅用於調試")
+    except Exception as e:
+        logger.warning(f"無法禁用SSL證書驗證: {str(e)}")
+    
+    # 解析命令行參數
+    parser = argparse.ArgumentParser(description='啟動LINE機器人webhook服務')
+    parser.add_argument('--port', type=int, default=5000, help='服務端口號')
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='服務主機地址')
+    args = parser.parse_args()
+    
+    # 記錄環境變數情況
+    logger.info(f"環境變數: FLASK_ENV={os.environ.get('FLASK_ENV', '未設置')}")
+    logger.info(f"環境變數: LINE_CHANNEL_SECRET={os.environ.get('LINE_CHANNEL_SECRET', '未設置')[0:5]}...")
+    logger.info(f"環境變數: LINE_CHANNEL_ACCESS_TOKEN={os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '未設置')[0:5]}...")
+    logger.info(f"環境變數: PORT={os.environ.get('PORT', '未設置')}")
+    
+    # 啟動應用
+    port = int(os.environ.get("PORT", args.port))
+    logger.info(f"啟動應用，監聽 {args.host}:{port}")
+    
+    try:
+        app.run(host=args.host, port=port, debug=False, threaded=True)
+    except Exception as e:
+        logger.error(f"啟動應用時發生錯誤: {str(e)}")
 
 # 登入API
 @app.route('/api/login', methods=['POST'])

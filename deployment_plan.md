@@ -161,30 +161,26 @@ flyctl scale vm dedicated-cpu-1x
 flyctl scale count 2
 ```
 
-## CI/CD 整合
+### 4. 後續更新部署
 
-### GitHub Actions 配置
+```bash
+# 準備應用更新
+git pull  # 如果從遠程倉庫拉取更新
 
-```yaml
-name: Deploy to Fly.io
+# 編輯已存在的 fly.toml 或 Dockerfile（如需要）
 
-on:
-  push:
-    branches: [ main ]
+# 重新部署應用
+flyctl deploy
+```
 
-jobs:
-  deploy:
-    name: Deploy app
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      
-      - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+### 5. 回滾部署（如果有問題）
+
+```bash
+# 查看部署歷史
+flyctl releases
+
+# 回滾到指定版本
+flyctl deploy --release v123
 ```
 
 ## 備份策略

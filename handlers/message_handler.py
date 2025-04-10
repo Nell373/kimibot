@@ -3,15 +3,14 @@ import json
 import logging
 import os
 from datetime import datetime, date, timedelta
-from linebot import LineBotApi
-from linebot.models import (
-    TextSendMessage, FlexSendMessage, 
-    BubbleContainer, BoxComponent,
-    ButtonComponent, PostbackAction,
-    IconComponent, TextComponent,
-    SeparatorComponent,
-    RichMenu, RichMenuArea, RichMenuSize, RichMenuBounds, URIAction,
-    CarouselContainer
+# 更新LINE Bot SDK導入
+from linebot.v3.messaging import (
+    ApiClient, MessagingApi, Configuration,
+    TextMessage, FlexMessage, FlexContainer,
+    ReplyMessageRequest, RichMenuRequest, RichMenuArea, RichMenuSize, RichMenuBounds,
+    URIAction, PostbackAction, FlexButton as ButtonComponent, 
+    FlexComponent as BoxComponent, 
+    FlexComponent as IconComponent, FlexComponent as TextComponent, FlexComponent as SeparatorComponent
 )
 from database.db_utils import DatabaseUtils
 from parsers.text_parser import TextParser
@@ -354,7 +353,7 @@ class MessageHandler:
             logger.error(f"處理查詢請求時出錯: {str(e)}")
             self.line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text=f"查詢失敗，請稍後再試。")
+                TextMessage(text=f"查詢失敗，請稍後再試。")
             )
     
     def _handle_category_selection(self, user_id, reply_token, data):
@@ -437,10 +436,15 @@ class MessageHandler:
     def _send_account_selection(self, reply_token, accounts, account_data):
         """發送帳戶選擇的 Flex 訊息"""
         bubble = self._create_account_selection_bubble(accounts, account_data)
-        flex_message = FlexSendMessage(alt_text="請選擇帳戶", contents=bubble)
+        flex_message = FlexMessage(alt_text="請選擇帳戶", contents=bubble)
         
         # 發送訊息
-        self.line_bot_api.reply_message(reply_token, flex_message)
+        self.line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[flex_message]
+            )
+        )
     
     def _create_account_selection_bubble(self, accounts, account_data):
         """創建帳戶選擇的 Bubble 容器"""
@@ -517,7 +521,7 @@ class MessageHandler:
                 )
         
         # 創建 Bubble 容器
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -553,10 +557,15 @@ class MessageHandler:
     def _send_category_selection(self, reply_token, categories, account_data):
         """發送分類選擇的 Flex 訊息"""
         bubble = self._create_category_selection_bubble(categories, account_data)
-        flex_message = FlexSendMessage(alt_text="請選擇分類", contents=bubble)
+        flex_message = FlexMessage(alt_text="請選擇分類", contents=bubble)
         
         # 發送訊息
-        self.line_bot_api.reply_message(reply_token, flex_message)
+        self.line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[flex_message]
+            )
+        )
     
     def _create_category_selection_bubble(self, categories, account_data):
         """創建分類選擇的 Bubble 容器"""
@@ -605,7 +614,7 @@ class MessageHandler:
                 )
         
         # 創建 Bubble 容器
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -643,10 +652,15 @@ class MessageHandler:
         bubble = self._create_transaction_confirmation_bubble(
             transaction_type, item, amount, category, account, trans_date
         )
-        flex_message = FlexSendMessage(alt_text="交易已記錄", contents=bubble)
+        flex_message = FlexMessage(alt_text="交易已記錄", contents=bubble)
         
         # 發送訊息
-        self.line_bot_api.reply_message(reply_token, flex_message)
+        self.line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[flex_message]
+            )
+        )
     
     def _create_transaction_confirmation_bubble(self, transaction_type, item, amount, category, account, trans_date):
         """創建交易確認的 Bubble 容器"""
@@ -818,10 +832,15 @@ class MessageHandler:
     def _send_reminder_confirmation(self, reply_token, content, due_datetime, remind_before, repeat_text, reminder_id):
         """發送提醒確認的 Flex 訊息"""
         bubble = self._create_reminder_confirmation_bubble(content, due_datetime, remind_before, repeat_text, reminder_id)
-        flex_message = FlexSendMessage(alt_text="提醒已設置", contents=bubble)
+        flex_message = FlexMessage(alt_text="提醒已設置", contents=bubble)
         
         # 發送訊息
-        self.line_bot_api.reply_message(reply_token, flex_message)
+        self.line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[flex_message]
+            )
+        )
     
     def _create_reminder_confirmation_bubble(self, content, due_datetime, remind_before, repeat_text, reminder_id):
         """創建提醒確認的 Bubble 容器"""
@@ -1012,7 +1031,7 @@ class MessageHandler:
         if not reminders:
             self.line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text="該時間段內沒有未完成的提醒事項。")
+                TextMessage(text="該時間段內沒有未完成的提醒事項。")
             )
             return
         
@@ -1031,7 +1050,7 @@ class MessageHandler:
             reminder_id = reminder["reminder_id"]
             
             # 創建 Bubble 容器
-            bubble = BubbleContainer(
+            bubble = FlexContainer(
                 header=BoxComponent(
                     layout="vertical",
                     contents=[
@@ -1119,10 +1138,10 @@ class MessageHandler:
             bubbles.append(bubble)
         
         # 創建 Carousel 容器
-        carousel = CarouselContainer(contents=bubbles)
+        carousel = FlexContainer(contents=bubbles)
         
         # 發送 Flex Message
-        flex_message = FlexSendMessage(alt_text=title, contents=carousel)
+        flex_message = FlexMessage(alt_text=title, contents=carousel)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _handle_complete_reminder(self, user_id, reply_token, data):
@@ -1169,7 +1188,12 @@ class MessageHandler:
     
     def _reply_text(self, reply_token, text):
         """回覆文字訊息"""
-        self.line_bot_api.reply_message(reply_token, TextSendMessage(text=text))
+        self.line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[TextMessage(text=text)]
+            )
+        )
 
     def _handle_account_command(self, user_id, reply_token, data):
         """處理帳戶相關命令"""
@@ -1196,7 +1220,7 @@ class MessageHandler:
         """創建並註冊快速選單"""
         try:
             # 定義記帳快速選單
-            rich_menu_to_create = RichMenu(
+            rich_menu_to_create = RichMenuRequest(
                 size=RichMenuSize(width=2500, height=843),
                 selected=True,
                 name="記帳與提醒快速選單",
@@ -1360,7 +1384,7 @@ class MessageHandler:
                 )
         
         # 創建 Bubble 容器
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -1380,7 +1404,7 @@ class MessageHandler:
         )
         
         # 發送 Flex 訊息
-        flex_message = FlexSendMessage(alt_text=title, contents=bubble)
+        flex_message = FlexMessage(alt_text=title, contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _send_quick_account_selection(self, user_id, reply_token):
@@ -1446,7 +1470,7 @@ class MessageHandler:
             )
         
         # 創建 Bubble 容器
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -1466,7 +1490,7 @@ class MessageHandler:
         )
         
         # 發送 Flex 訊息
-        flex_message = FlexSendMessage(alt_text="選擇帳戶", contents=bubble)
+        flex_message = FlexMessage(alt_text="選擇帳戶", contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _send_quick_query_options(self, reply_token):
@@ -1560,7 +1584,7 @@ class MessageHandler:
             )
         
         # 創建 Bubble 容器
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -1580,7 +1604,7 @@ class MessageHandler:
         )
         
         # 發送 Flex 訊息
-        flex_message = FlexSendMessage(alt_text="選擇查詢", contents=bubble)
+        flex_message = FlexMessage(alt_text="選擇查詢", contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _handle_quick_category_selected(self, user_id, reply_token, data):
@@ -1736,14 +1760,14 @@ class MessageHandler:
                 # 未知查詢類型
                 self.line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(text="抱歉，暫不支持該類型的查詢。請嘗試查詢支出、收入或提醒。")
+                    TextMessage(text="抱歉，暫不支持該類型的查詢。請嘗試查詢支出、收入或提醒。")
                 )
         
         except Exception as e:
             logger.error(f"處理查詢請求時出錯: {str(e)}")
             self.line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text=f"查詢失敗，請稍後再試。錯誤信息: {str(e)}")
+                TextMessage(text=f"查詢失敗，請稍後再試。錯誤信息: {str(e)}")
             )
     
     def _calculate_query_date_range(self, time_range, time_value):
@@ -1895,7 +1919,7 @@ class MessageHandler:
         if not results:
             self.line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text="該時間段內沒有支出記錄。")
+                TextMessage(text="該時間段內沒有支出記錄。")
             )
             return
         
@@ -1919,7 +1943,7 @@ class MessageHandler:
         title += "支出統計"
         
         # 構建 Flex Message 內容
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -2028,7 +2052,7 @@ class MessageHandler:
         )
         
         # 發送 Flex Message
-        flex_message = FlexSendMessage(alt_text=title, contents=bubble)
+        flex_message = FlexMessage(alt_text=title, contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _send_income_report(self, reply_token, results, time_range, time_value, category=None, account=None):
@@ -2036,7 +2060,7 @@ class MessageHandler:
         if not results:
             self.line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text="該時間段內沒有收入記錄。")
+                TextMessage(text="該時間段內沒有收入記錄。")
             )
             return
         
@@ -2060,7 +2084,7 @@ class MessageHandler:
         title += "收入統計"
         
         # 構建 Flex Message 內容
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -2169,7 +2193,7 @@ class MessageHandler:
         )
         
         # 發送 Flex Message
-        flex_message = FlexSendMessage(alt_text=title, contents=bubble)
+        flex_message = FlexMessage(alt_text=title, contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
     
     def _get_time_range_description(self, time_range, time_value):
@@ -2231,7 +2255,7 @@ class MessageHandler:
         title += "餘額報表"
         
         # 構建 Flex Message 內容
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -2276,7 +2300,7 @@ class MessageHandler:
         )
         
         # 發送 Flex Message
-        flex_message = FlexSendMessage(alt_text=title, contents=bubble)
+        flex_message = FlexMessage(alt_text=title, contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message)
 
     def _send_overview_report(self, reply_token, expense_results, income_results, time_range, time_value):
@@ -2293,7 +2317,7 @@ class MessageHandler:
         title += "總覽報表"
         
         # 構建 Flex Message 內容
-        bubble = BubbleContainer(
+        bubble = FlexContainer(
             header=BoxComponent(
                 layout="vertical",
                 contents=[
@@ -2376,5 +2400,5 @@ class MessageHandler:
         )
         
         # 發送 Flex Message
-        flex_message = FlexSendMessage(alt_text=title, contents=bubble)
+        flex_message = FlexMessage(alt_text=title, contents=bubble)
         self.line_bot_api.reply_message(reply_token, flex_message) 

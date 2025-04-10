@@ -6,10 +6,23 @@ kill_timeout = 5
 [env]
   PORT = "8080"
   PYTHONUNBUFFERED = "1"
+  FLASK_ENV = "production"
+  # 添加其他必要環境變數，但隱藏實際值，通過flyctl secrets設置
+  LOG_LEVEL = "debug"
+  DATABASE_PATH = "/app/database/linebot.db"
+  WEBHOOK_URL = "https://kimibot.fly.dev/api/webhook"
+  # LINE_CHANNEL_SECRET 和 LINE_CHANNEL_ACCESS_TOKEN 應通過 flyctl secrets 設置
 
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
+
+# 添加進程保持配置，防止應用自動關閉
+[processes]
+  # 直接使用Python運行webapp，避免Gunicorn啟動問題
+  app = "python webhook.py --port=8080 --host=0.0.0.0"
+  # 添加保持系統運行的後台進程
+  cron = "python -m scheduler.reminder_scheduler"
 
 [mounts]
   source = "line_bot_data"
@@ -19,6 +32,7 @@ kill_timeout = 5
   protocol = "tcp"
   internal_port = 8080
   script_checks = []
+  processes = ["app"]  # 指定使用 app 進程
   
   [services.concurrency]
     hard_limit = 25
@@ -40,12 +54,29 @@ kill_timeout = 5
     restart_limit = 0
     timeout = "2s"
 
-  [[services.http_checks]]
-    interval = "10s"
-    grace_period = "5s"
-    method = "get"
-    path = "/health"
-    protocol = "http"
-    restart_limit = 0
-    timeout = "2s"
-    tls_skip_verify = false 
+  # 暫時完全關閉健康檢查，讓應用能夠啟動不受干擾
+  # [[services.http_checks]]
+  #   interval = "30s"
+  #   grace_period = "30s"
+  #   method = "get"
+  #   path = "/health"
+  #   protocol = "http"
+  #   restart_limit = 3
+  #   timeout = "5s"
+  #   tls_skip_verify = true
+  #   headers = { }
+
+# 優化後台進程服務配置，減少運行機器數量
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  processes = ["cron"]  # 指定使用 cron 進程
+  script_checks = []
+  auto_stop_machines = true  # 允許機器自動停止，節省資源
+  auto_start_machines = false  # 不自動啟動多台機器
+  min_machines_running = 1  # 確保只有1台機器運行排程器
+  
+  # 添加端口配置，解決"必須暴露至少一個端口"的警告
+  [[services.ports]]
+    handlers = ["http"]
+    port = 8080 

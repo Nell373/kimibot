@@ -126,7 +126,7 @@ linebot-assistant/
 1. 複製專案並安裝依賴
 
 ```bash
-git clone https://github.com/yourusername/linebot-assistant.git
+git clone https://github.com/Nell373/kimibot.git
 cd linebot-assistant
 pip install -r requirements.txt
 ```
@@ -162,39 +162,54 @@ ngrok http 5000
 
 6. 在 LINE Developers 控制台中設定 Webhook URL
 
-### 測試 Webhook
+### 部署到 Fly.io
 
-本專案提供兩種測試腳本，以便在不同情境下測試 Webhook 功能：
-
-1. **開發環境測試** (`test_webhook.py`)
+1. 安裝 Fly CLI:
 
 ```bash
-# 設置開發環境模式
-export FLASK_ENV=development  # Linux/macOS
-set FLASK_ENV=development     # Windows
-# 執行測試
-python test_webhook.py
+# 安裝 Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# 或者使用 Homebrew (macOS)
+brew install flyctl
 ```
 
-這個測試腳本特點：
-- **無簽名驗證**：跳過 X-Line-Signature 驗證步驟
-- **僅用於開發環境**：僅在 FLASK_ENV=development 時有效
-- **使用測試用戶**：使用特殊的 test_user_id，無需真實 LINE 用戶
-- **適用場景**：快速驗證 webhook 邏輯和資料處理流程
-
-2. **完整測試** (`test_webhook_with_signature.py`)
+2. 登入到 Fly.io:
 
 ```bash
-python test_webhook_with_signature.py
+fly auth login
 ```
 
-這個測試腳本特點：
-- **包含簽名驗證**：模擬真實 LINE 平台請求，計算並附加正確的 X-Line-Signature
-- **適用於任何環境**：開發環境和生產環境都可使用
-- **可測試多種訊息類型**：支援測試各種不同的 LINE 事件類型
-- **適用場景**：最終部署前的完整功能測試
+3. 初始化應用 (如果是第一次部署):
 
-> 注意：在實際部署時，webhook 將始終驗證簽名。開發環境的無簽名測試只是為了簡化本地開發流程。
+```bash
+fly launch
+```
+
+4. 創建持久化卷 (如果是第一次部署):
+
+```bash
+fly volumes create line_bot_data --size 1
+```
+
+5. 設置必要的密鑰:
+
+```bash
+fly secrets set LINE_CHANNEL_SECRET=您的頻道密鑰
+fly secrets set LINE_CHANNEL_ACCESS_TOKEN=您的存取權杖
+```
+
+6. 部署應用:
+
+```bash
+fly deploy
+```
+
+7. 查看部署日誌:
+
+```bash
+fly logs
+```
 
 ## 📝 使用說明
 

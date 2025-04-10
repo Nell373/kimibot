@@ -5,6 +5,8 @@ WORKDIR /app
 # 安裝系統依賴
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # 複製依賴文件
@@ -22,11 +24,16 @@ RUN mkdir -p database
 # 初始化資料庫
 RUN python init_db.py
 
+# 創建supervisord配置文件
+RUN echo "[supervisord]\nnodaemon=true\n\n\
+[program:webapp]\ncommand=gunicorn --bind 0.0.0.0:8080 --workers 2 --threads 4 --timeout 60 webhook:app\ndirectory=/app\nautostart=true\nautorestart=true\n\n\
+[program:scheduler]\ncommand=python -m scheduler.reminder_scheduler\ndirectory=/app\nautostart=true\nautorestart=true" > /etc/supervisor/conf.d/supervisord.conf
+
 # 暴露端口
 EXPOSE 8080
 
 # 設置健康檢查
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD curl -f http://localhost:8080/health || exit 1
 
-# 設置啟動命令
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "--timeout", "60", "webhook:app"] 
+# 使用 supervisor 啟動多個進程
+CMD ["/usr/bin/supervisord"] 

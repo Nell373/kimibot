@@ -6,8 +6,11 @@ from datetime import datetime, timedelta
 import threading
 import schedule
 
-from linebot import LineBotApi
-from linebot.models import TextSendMessage, FlexSendMessage
+# 更新LINE Bot SDK導入
+from linebot.v3.messaging import (
+    ApiClient, MessagingApi, Configuration,
+    TextMessage, FlexMessage, PushMessageRequest
+)
 from database.db_utils import DatabaseUtils
 
 # 設置日誌
@@ -22,7 +25,16 @@ class ReminderScheduler:
     
     def __init__(self, line_bot_api=None, db=None):
         """初始化排程器"""
-        self.line_bot_api = line_bot_api or LineBotApi(os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'))
+        if line_bot_api is None:
+            # 創建API客戶端
+            configuration = Configuration(
+                access_token=os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
+            )
+            with ApiClient(configuration) as api_client:
+                self.line_bot_api = MessagingApi(api_client)
+        else:
+            self.line_bot_api = line_bot_api
+            
         self.db = db or DatabaseUtils()
         self.is_running = False
         self.scheduler_thread = None
@@ -206,12 +218,16 @@ class ReminderScheduler:
             }
         }
         
-        # 發送提醒訊息
-        flex_message = FlexSendMessage(
-            alt_text=f"提醒：{title} - {due_datetime.strftime('%H:%M')}",
-            contents=bubble
+        # 多個提醒情況下發送Flex訊息
+        flex_message = FlexMessage(alt_text="提醒通知", contents=bubble)
+        
+        # 使用新版SDK的方式發送推送訊息
+        self.line_bot_api.push_message_with_http_info(
+            PushMessageRequest(
+                to=user_id,
+                messages=[flex_message]
+            )
         )
-        self.line_bot_api.push_message(user_id, flex_message)
         logger.info(f"向用戶 {user_id} 發送提醒：{title}")
         
         # 如果是重複提醒，自動創建下一次提醒
@@ -228,9 +244,12 @@ class ReminderScheduler:
         
         reminders_text += "\n請點擊提醒查看詳情並設置完成。"
         
-        # 發送文字訊息
-        self.line_bot_api.push_message(
-            user_id, TextSendMessage(text=reminders_text)
+        # 使用新版SDK的方式發送推送訊息
+        self.line_bot_api.push_message_with_http_info(
+            PushMessageRequest(
+                to=user_id,
+                messages=[TextMessage(text=reminders_text)]
+            )
         )
         logger.info(f"向用戶 {user_id} 發送 {len(reminders)} 個提醒")
     

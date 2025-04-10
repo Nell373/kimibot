@@ -1,6 +1,7 @@
 # LINE Bot 相關
-line-bot-sdk==2.4.1
+line-bot-sdk==3.16.3
 flask==2.2.3
+werkzeug==2.2.3
 python-dotenv==1.0.0
 
 # 資料庫相關
