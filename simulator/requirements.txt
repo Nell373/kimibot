@@ -1,0 +1,31 @@
+# LINE 智能記帳與提醒助手 - 模擬環境依賴
+
+# Web 框架
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+
+# LINE Bot SDK
+line-bot-sdk==3.5.0
+
+# 實用工具
+python-dotenv==1.0.0
+requests==2.31.0
+pytz==2023.3
+
+# 數據處理
+SQLAlchemy==2.0.21
+simplejson==3.19.1
+
+# 測試工具
+pytest==7.4.2
+pytest-mock==3.11.1
+
+# 前端相關
+Flask-Assets==2.0
+jsmin==3.0.1
+cssmin==0.2.0
+watchdog==3.0.0
+
+# 開發工具
+Flask-DebugToolbar==0.13.1 

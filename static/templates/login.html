@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00B900">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>LINE 智能記帳與提醒助手</h1>
+        </div>
+    </header>
+    
+    <main class="container">
+        <section class="login-section">
+            <div class="login-card">
+                <h2>使用者登入</h2>
+                <p>請使用您的LINE帳號登入，以便查看您的記帳和提醒資料。</p>
+                
+                <div class="login-methods">
+                    <button id="line-login-btn" class="line-btn">
+                        <img src="/static/assets/line-icon.png" alt="LINE Icon">
+                        使用 LINE 帳號登入
+                    </button>
+                    
+                    <div class="divider">或者</div>
+                    
+                    <form id="login-form" class="login-form">
+                        <div class="form-group">
+                            <label for="user-id">用戶ID</label>
+                            <input type="text" id="user-id" name="user-id" placeholder="請輸入您的LINE用戶ID">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密碼</label>
+                            <input type="password" id="password" name="password" placeholder="請輸入您的密碼">
+                        </div>
+                        <button type="submit" class="primary-btn">登入</button>
+                    </form>
+                </div>
+                
+                <div class="help-text">
+                    <p>沒有帳號？請先在LINE上加入我們的機器人為好友，然後使用LINE登入。</p>
+                    <a href="https://line.me/R/ti/p/@YOUR_BOT_ID" class="secondary-btn" target="_blank">加入好友</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 LINE 智能記帳與提醒助手</p>
+        </div>
+    </footer>
+    
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="/static/js/login.js"></script>
+    <script>
+        // 註冊 Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+              .then(reg => console.log('Service Worker 註冊成功:', reg))
+              .catch(err => console.log('Service Worker 註冊失敗:', err));
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,834 @@
+/* 儀表板樣式 */
+:root {
+    --card-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    --card-radius: 8px;
+    --income-color: #4CAF50;
+    --expense-color: #F44336;
+    --balance-color: #2196F3;
+    --card-bg: #ffffff;
+    --hover-bg: #f9f9f9;
+    --modal-overlay: rgba(0,0,0,0.5);
+    --divider-color: #eeeeee;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding-bottom: 2rem;
+}
+
+/* 頭部樣式 */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.logout-btn {
+    background: none;
+    border: 1px solid white;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* 導航樣式 */
+.main-nav {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.nav-items {
+    display: flex;
+    list-style: none;
+    padding: 0;
+}
+
+.nav-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.nav-item:hover {
+    color: var(--primary-color);
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.nav-item.active:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+/* 頁面區域樣式 */
+.page-section {
+    display: none;
+    padding: 2rem 0;
+}
+
+.page-section.active {
+    display: block;
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--divider-color);
+    padding-bottom: 10px;
+}
+
+/* 總覽頁樣式 */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.overview-card {
+    background-color: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+}
+
+.overview-card h3 {
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+    border-bottom: 1px solid var(--divider-color);
+    padding-bottom: 10px;
+}
+
+.summary-card {
+    grid-column: 1 / -1;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: var(--hover-bg);
+    border-radius: 4px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    color: var(--dark-gray);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-value.income {
+    color: var(--income-color);
+}
+
+.stat-value.expense {
+    color: var(--expense-color);
+}
+
+.stat-value.balance {
+    color: var(--balance-color);
+}
+
+.chart-container {
+    width: 100%;
+    height: 250px;
+}
+
+/* 交易記錄頁樣式 */
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    background-color: var(--card-bg);
+    padding: 15px;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+}
+
+.filter-group label {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.filter-group select, 
+.filter-group input {
+    padding: 8px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+}
+
+.transactions-container {
+    background-color: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--divider-color);
+}
+
+.transactions-table th {
+    background-color: var(--light-gray);
+    font-weight: bold;
+}
+
+.transactions-table tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.page-btn {
+    background-color: var(--white);
+    border: 1px solid var(--medium-gray);
+    padding: 5px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 提醒頁樣式 */
+.reminders-container {
+    margin-top: 20px;
+}
+
+.reminders-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.reminder-item {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    padding: 20px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #00B900;
+}
+
+.reminder-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+}
+
+.reminder-item.completed {
+    border-left-color: #999;
+    opacity: 0.7;
+}
+
+.reminder-content {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.reminder-time {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.reminder-time .date {
+    margin-right: 10px;
+}
+
+.reminder-time .time {
+    font-weight: 500;
+}
+
+.reminder-repeat, 
+.reminder-notify-before {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 6px;
+}
+
+.reminder-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.reminder-actions button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    border: 1px solid #ddd;
+}
+
+.reminder-actions .complete-btn {
+    background-color: #e8f5e9;
+    color: #43a047;
+    border-color: #c8e6c9;
+}
+
+.reminder-actions .complete-btn:hover {
+    background-color: #c8e6c9;
+}
+
+.reminder-actions .edit-btn {
+    background-color: #f8f8f8;
+    color: #333;
+}
+
+.reminder-actions .edit-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.reminder-actions .delete-btn {
+    background-color: #ffebee;
+    color: #e53935;
+    border-color: #ffcdd2;
+}
+
+.reminder-actions .delete-btn:hover {
+    background-color: #ffcdd2;
+}
+
+.empty-text {
+    text-align: center;
+    padding: 40px 0;
+    color: #999;
+    font-style: italic;
+    grid-column: 1 / -1;
+}
+
+.error-text {
+    text-align: center;
+    padding: 40px 0;
+    color: #e53935;
+    grid-column: 1 / -1;
+}
+
+/* 提醒狀態篩選控制 */
+.filter-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+}
+
+.filter-group label {
+    margin-right: 10px;
+    font-weight: 500;
+}
+
+.filter-group select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 120px;
+}
+
+/* 新增提醒按鈕 */
+.primary-btn {
+    background-color: #00B900;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.primary-btn:hover {
+    background-color: #009900;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .reminders-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .filter-group select {
+        flex-grow: 1;
+    }
+    
+    .reminder-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .reminder-actions button {
+        margin-top: 5px;
+    }
+}
+
+/* 帳戶頁樣式 */
+.accounts-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.account-card {
+    background-color: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.account-card:hover {
+    transform: translateY(-5px);
+}
+
+.account-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.account-balance {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.account-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* 設定頁樣式 */
+.settings-card {
+    background-color: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.settings-card h3 {
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+}
+
+.settings-form {
+    max-width: 500px;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* 模態框樣式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #888;
+}
+
+.close-btn:hover {
+    color: #000;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.secondary-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.secondary-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+.transactions-table th {
+    background-color: #f8f8f8;
+    font-weight: 600;
+}
+
+.transactions-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.edit-btn,
+.delete-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+.edit-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.delete-btn {
+    background-color: #ffebee;
+    color: #e53935;
+    border: 1px solid #ffcdd2;
+}
+
+.edit-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.delete-btn:hover {
+    background-color: #ffcdd2;
+}
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 15px;
+}
+
+.page-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.loading-text,
+.empty-text,
+.error-text {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.error-text {
+    color: #e53935;
+}
+
+/* 適配移動設備 */
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .transactions-table {
+        font-size: 14px;
+    }
+    
+    .transactions-table th,
+    .transactions-table td {
+        padding: 8px;
+    }
+    
+    .modal-content {
+        margin: 5% auto;
+        width: 95%;
+    }
+}
+
+/* 分類管理頁樣式 */
+.categories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.categories-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.categories-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.categories-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.categories-table th,
+.categories-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.categories-table th {
+    background-color: #f8f8f8;
+    font-weight: 600;
+}
+
+.categories-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.category-icon {
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.category-type.expense {
+    background-color: #ffebee;
+    color: #e53935;
+}
+
+.category-type.income {
+    background-color: #e8f5e9;
+    color: #43a047;
+}
+
+.emoji-suggestions {
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.emoji-group {
+    margin-bottom: 15px;
+}
+
+.emoji-group h4 {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 8px;
+}
+
+.emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.emoji:hover {
+    background-color: #e0e0e0;
+} 

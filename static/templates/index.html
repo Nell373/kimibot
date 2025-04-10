@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>LINE 智能記帳與提醒助手</h1>
+        </div>
+    </header>
+    
+    <main class="container">
+        <section class="welcome-section">
+            <h2>歡迎使用！</h2>
+            <p>這是您的個人財務與生活管理工具，無需安裝 App，透過 LINE 即可隨時記帳與建立提醒。</p>
+        </section>
+        
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>記帳功能</h3>
+                <p>直接輸入「早餐 -120」即可記錄支出，輸入「薪水 +30000」記錄收入。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⏰</div>
+                <h3>提醒功能</h3>
+                <p>輸入「#明天早上9點 開會」即可設定提醒，支援重複和提前通知。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>報表查詢</h3>
+                <p>輸入「查詢本月支出」查看詳細的支出報表和分類統計。</p>
+            </div>
+        </section>
+        
+        <section class="get-started">
+            <h2>開始使用</h2>
+            <a href="https://line.me/R/ti/p/@YOUR_BOT_ID" class="btn primary-btn" target="_blank">加入好友</a>
+            <a href="#" class="btn secondary-btn" id="loginBtn">登入 Web 版</a>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 LINE 智能記帳與提醒助手</p>
+        </div>
+    </footer>
+    
+    <script src="/static/js/app.js"></script>
+    <script>
+        // 註冊 Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+              .then(reg => console.log('Service Worker 註冊成功:', reg))
+              .catch(err => console.log('Service Worker 註冊失敗:', err));
+        }
+    </script>
+</body>
+</html> 

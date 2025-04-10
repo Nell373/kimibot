@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>離線 - LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .offline-container {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>LINE 智能記帳與提醒助手</h1>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="offline-container">
+            <div class="offline-icon">📶</div>
+            <h2>您目前處於離線狀態</h2>
+            <p>無法連接到伺服器，請檢查您的網絡連接。</p>
+            <p>您仍然可以在 LINE 應用程式中使用記帳和提醒功能，這些操作將在恢復連接後同步。</p>
+            <button class="btn primary-btn" onclick="window.location.reload()">重新連接</button>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 LINE 智能記帳與提醒助手</p>
+        </div>
+    </footer>
+</body>
+</html> 

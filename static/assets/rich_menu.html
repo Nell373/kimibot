@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KimiBot Rich Menu</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        #rich-menu {
+            width: 2500px;
+            height: 1686px;
+            background-color: #f8f9fa;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+        }
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        .menu-item:hover {
+            background-color: #f1f3f5;
+        }
+        .icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+        }
+        .label {
+            font-size: 60px;
+            font-weight: bold;
+        }
+        .description {
+            font-size: 36px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .expense {
+            color: #e74c3c;
+        }
+        .income {
+            color: #2ecc71;
+        }
+        .reminder {
+            color: #3498db;
+        }
+        .account {
+            color: #f39c12;
+        }
+        .query {
+            color: #9b59b6;
+        }
+        .more {
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <div id="rich-menu">
+        <div class="menu-item">
+            <div class="icon expense">💸</div>
+            <div class="label">支出記帳</div>
+            <div class="description">快速記錄你的支出</div>
+        </div>
+        <div class="menu-item">
+            <div class="icon income">💰</div>
+            <div class="label">收入記帳</div>
+            <div class="description">記錄你的收入來源</div>
+        </div>
+        <div class="menu-item">
+            <div class="icon reminder">⏰</div>
+            <div class="label">設置提醒</div>
+            <div class="description">不要忘記重要事項</div>
+        </div>
+        <div class="menu-item">
+            <div class="icon account">💳</div>
+            <div class="label">常用帳戶</div>
+            <div class="description">快速選擇付款方式</div>
+        </div>
+        <div class="menu-item">
+            <div class="icon query">📊</div>
+            <div class="label">查詢記錄</div>
+            <div class="description">檢視你的財務狀況</div>
+        </div>
+        <div class="menu-item">
+            <div class="icon more">⚙️</div>
+            <div class="label">更多功能</div>
+            <div class="description">設置與進階選項</div>
+        </div>
+    </div>
+
+    <script>
+        // 可以加入一個下載按鈕或自動生成圖片的功能
+        window.onload = function() {
+            console.log("Rich Menu 圖片已加載");
+        };
+    </script>
+</body>
+</html> 

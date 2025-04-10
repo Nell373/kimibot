@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>智能記帳助手選單</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Arial, "PingFang TC", "Heiti TC", "Microsoft JhengHei", sans-serif;
+        }
+        .rich-menu {
+            width: 2500px;
+            height: 1686px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            background-color: #f5f7fa;
+        }
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            background-color: white;
+            color: #333;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        .icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+        }
+        .expense {
+            background-color: #ffeaea;
+            color: #e74c3c;
+        }
+        .income {
+            background-color: #e9fff0;
+            color: #27ae60;
+        }
+        .reminder {
+            background-color: #fff8e1;
+            color: #f39c12;
+        }
+        .account {
+            background-color: #e3f2fd;
+            color: #2980b9;
+        }
+        .query {
+            background-color: #f3e5f5;
+            color: #8e44ad;
+        }
+        .more {
+            background-color: #f5f5f5;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="rich-menu">
+        <div class="menu-item expense">
+            <div class="icon">💰</div>
+            <div>支出記帳</div>
+        </div>
+        <div class="menu-item income">
+            <div class="icon">💵</div>
+            <div>收入記帳</div>
+        </div>
+        <div class="menu-item reminder">
+            <div class="icon">⏰</div>
+            <div>設置提醒</div>
+        </div>
+        <div class="menu-item account">
+            <div class="icon">🏦</div>
+            <div>常用帳戶</div>
+        </div>
+        <div class="menu-item query">
+            <div class="icon">📊</div>
+            <div>查詢記錄</div>
+        </div>
+        <div class="menu-item more">
+            <div class="icon">⚙️</div>
+            <div>更多功能</div>
+        </div>
+    </div>
+</body>
+</html> 

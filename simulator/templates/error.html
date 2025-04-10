@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>錯誤 - LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulator.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .error-container {
+            text-align: center;
+            padding: 50px 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .error-icon {
+            font-size: 60px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .error-message {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="LINE 智能記帳與提醒助手">
+            <h1>錯誤</h1>
+        </div>
+        <div class="nav">
+            <a href="{{ url_for('index') }}">首頁</a>
+            <a href="{{ url_for('line_simulator_page') }}">LINE 模擬器</a>
+            <a href="{{ url_for('pwa_preview') }}">PWA 預覽</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="error-container">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h2 class="error-title">發生錯誤</h2>
+            <p class="error-message">{{ error }}</p>
+            <a href="{{ url_for('index') }}" class="back-button">
+                <i class="fas fa-arrow-left"></i> 返回首頁
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 LINE 智能記帳與提醒助手 - 模擬環境</p>
+    </footer>
+</body>
+</html> 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE 智能記帳與提醒助手 - 模擬環境</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulator.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="LINE 智能記帳與提醒助手">
+            <h1>LINE 智能記帳與提醒助手</h1>
+        </div>
+        <div class="nav">
+            <a href="{{ url_for('index') }}" class="active">首頁</a>
+            <a href="{{ url_for('line_simulator_page') }}">LINE 模擬器</a>
+            <a href="{{ url_for('pwa_preview') }}">PWA 預覽</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="intro">
+            <h2>模擬環境介紹</h2>
+            <p>本模擬環境用於測試 LINE 智能記帳與提醒助手的功能，包括 LINE Bot 和 PWA 功能。</p>
+            <p>您可以在左側的導航欄選擇不同的測試頁面。</p>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fab fa-line"></i>
+                </div>
+                <h3>LINE 聊天模擬器</h3>
+                <p>測試 LINE Bot 的各項功能，包括記帳、提醒和查詢功能。</p>
+                <a href="{{ url_for('line_simulator_page') }}" class="btn">開始測試</a>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>PWA 預覽</h3>
+                <p>預覽 PWA 網頁應用的各個頁面和功能，測試響應式設計和功能完整性。</p>
+                <a href="{{ url_for('pwa_preview') }}" class="btn">開始測試</a>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <h3>數據同步測試</h3>
+                <p>測試 LINE 和 Web 端的數據同步功能，確保兩個平台數據一致性。</p>
+                <a href="#data-sync-section" class="btn">了解更多</a>
+            </div>
+        </section>
+
+        <section id="data-sync-section" class="data-sync">
+            <h2>數據同步測試</h2>
+            <p>數據同步測試允許您驗證在 LINE 端和 Web 端進行的操作能否正確同步。</p>
+            
+            <div class="sync-test-panel">
+                <h3>執行同步測試</h3>
+                <div class="test-actions">
+                    <button id="sync-test-btn" class="btn">執行同步測試</button>
+                    <span id="sync-status" class="status">未執行</span>
+                </div>
+                <div id="sync-results" class="results">
+                    <!-- 同步測試結果將顯示在這裡 -->
+                </div>
+            </div>
+        </section>
+
+        <section class="pwa-audit">
+            <h2>PWA 符合度評測</h2>
+            <p>使用內置工具評測 PWA 應用的符合度，包括效能、可訪問性和最佳實踐。</p>
+            
+            <div class="audit-panel">
+                <h3>執行 PWA 評測</h3>
+                <button id="pwa-audit-btn" class="btn">開始評測</button>
+                <div id="audit-progress" class="progress-container" style="display:none;">
+                    <div class="progress-bar" style="width: 0%;">0%</div>
+                </div>
+                <div id="audit-results" class="results">
+                    <!-- 評測結果將顯示在這裡 -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 LINE 智能記帳與提醒助手 - 模擬環境</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+</body>
+</html> 

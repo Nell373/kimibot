@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA 預覽 - LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulator.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="LINE 智能記帳與提醒助手">
+            <h1>PWA 預覽</h1>
+        </div>
+        <div class="nav">
+            <a href="{{ url_for('index') }}">首頁</a>
+            <a href="{{ url_for('line_simulator_page') }}">LINE 模擬器</a>
+            <a href="{{ url_for('pwa_preview') }}" class="active">PWA 預覽</a>
+        </div>
+    </header>
+
+    <main class="pwa-preview">
+        <div class="preview-controls">
+            <div class="device-selection">
+                <h3>裝置選擇</h3>
+                <div class="device-buttons">
+                    <button class="device-btn active" data-device="mobile-portrait">
+                        <i class="fas fa-mobile-alt"></i> 手機 (直向)
+                    </button>
+                    <button class="device-btn" data-device="mobile-landscape">
+                        <i class="fas fa-mobile-alt fa-rotate-90"></i> 手機 (橫向)
+                    </button>
+                    <button class="device-btn" data-device="tablet-portrait">
+                        <i class="fas fa-tablet-alt"></i> 平板 (直向)
+                    </button>
+                    <button class="device-btn" data-device="tablet-landscape">
+                        <i class="fas fa-tablet-alt fa-rotate-90"></i> 平板 (橫向)
+                    </button>
+                    <button class="device-btn" data-device="desktop">
+                        <i class="fas fa-desktop"></i> 桌面
+                    </button>
+                </div>
+                
+                <div class="device-resolution">
+                    <span>解析度:</span>
+                    <span id="current-resolution">375 x 667 px</span>
+                </div>
+            </div>
+            
+            <div class="test-features">
+                <h3>測試功能</h3>
+                <div class="test-buttons">
+                    <button id="offline-test" class="btn">
+                        <i class="fas fa-wifi-slash"></i> 測試離線模式
+                    </button>
+                    <button id="camera-test" class="btn">
+                        <i class="fas fa-camera"></i> 測試相機功能
+                    </button>
+                    <button id="notification-test" class="btn">
+                        <i class="fas fa-bell"></i> 測試通知功能
+                    </button>
+                    <button id="install-test" class="btn">
+                        <i class="fas fa-download"></i> 測試安裝提示
+                    </button>
+                </div>
+                
+                <div class="pwa-audit-link">
+                    <a href="#pwa-audit" class="btn">
+                        <i class="fas fa-chart-bar"></i> 執行 PWA 符合度測試
+                    </a>
+                </div>
+            </div>
+            
+            <div class="page-navigation">
+                <h3>頁面導航</h3>
+                <div class="page-buttons">
+                    <button class="page-btn active" data-page="login">登入頁面</button>
+                    <button class="page-btn" data-page="overview">帳戶總覽</button>
+                    <button class="page-btn" data-page="transactions">交易記錄</button>
+                    <button class="page-btn" data-page="categories">分類管理</button>
+                    <button class="page-btn" data-page="reminders">提醒管理</button>
+                    <button class="page-btn" data-page="reports">報表分析</button>
+                    <button class="page-btn" data-page="settings">設置</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="device-preview">
+            <div class="device-frame" id="device-frame">
+                <div class="device-status-bar">
+                    <div class="status-time">12:34</div>
+                    <div class="status-icons">
+                        <i class="fas fa-wifi"></i>
+                        <i class="fas fa-signal"></i>
+                        <i class="fas fa-battery-three-quarters"></i>
+                    </div>
+                </div>
+                <iframe id="preview-iframe" src="{{ url_for('static', filename='templates/dashboard.html') }}"></iframe>
+                <div class="device-home-button"></div>
+            </div>
+        </div>
+
+        <div class="preview-details">
+            <div class="details-section">
+                <h3>PWA 符合度測試</h3>
+                <div id="pwa-audit" class="pwa-audit-results">
+                    <div class="audit-scores">
+                        <div class="audit-score-item">
+                            <div class="score-label">效能</div>
+                            <div class="score-circle" data-score="0">
+                                <span class="score-value">?</span>
+                            </div>
+                        </div>
+                        <div class="audit-score-item">
+                            <div class="score-label">可訪問性</div>
+                            <div class="score-circle" data-score="0">
+                                <span class="score-value">?</span>
+                            </div>
+                        </div>
+                        <div class="audit-score-item">
+                            <div class="score-label">最佳實踐</div>
+                            <div class="score-circle" data-score="0">
+                                <span class="score-value">?</span>
+                            </div>
+                        </div>
+                        <div class="audit-score-item">
+                            <div class="score-label">SEO</div>
+                            <div class="score-circle" data-score="0">
+                                <span class="score-value">?</span>
+                            </div>
+                        </div>
+                        <div class="audit-score-item">
+                            <div class="score-label">PWA</div>
+                            <div class="score-circle" data-score="0">
+                                <span class="score-value">?</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="run-audit" class="btn">執行評測</button>
+                    <div id="audit-details" class="audit-details">
+                        <!-- 評測詳細結果將顯示在這裡 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <h3>頁面事件日誌</h3>
+                <div class="event-log">
+                    <div id="event-log-content" class="event-log-content">
+                        <!-- 頁面事件日誌將顯示在這裡 -->
+                        <div class="log-item">初始化 PWA 預覽</div>
+                    </div>
+                    <button id="clear-logs" class="btn">清除日誌</button>
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <h3>元素檢查</h3>
+                <div class="element-inspector">
+                    <div class="inspector-toggle">
+                        <button id="toggle-inspector" class="btn">
+                            <i class="fas fa-crosshairs"></i> 啟用元素檢查
+                        </button>
+                    </div>
+                    <div id="element-details" class="element-details">
+                        <!-- 元素檢查結果將顯示在這裡 -->
+                        <div class="info-item">點擊 "啟用元素檢查" 以檢查元素</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="pwa-audit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>PWA 符合度評測詳情</h2>
+            <div id="pwa-audit-full-report"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 LINE 智能記帳與提醒助手 - 模擬環境</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/pwa_preview.js') }}"></script>
+</body>
+</html> 

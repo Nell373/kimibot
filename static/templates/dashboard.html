@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀表板 - LINE 智能記帳與提醒助手</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00B900">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <h1>LINE 智能記帳與提醒助手</h1>
+            <div class="user-info">
+                <span id="user-name">載入中...</span>
+                <button id="logout-btn" class="logout-btn">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-items">
+                <li class="nav-item active" data-target="overview">總覽</li>
+                <li class="nav-item" data-target="transactions">交易記錄</li>
+                <li class="nav-item" data-target="reminders">提醒事項</li>
+                <li class="nav-item" data-target="accounts">帳戶管理</li>
+                <li class="nav-item" data-target="categories">分類管理</li>
+                <li class="nav-item" data-target="settings">設定</li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <!-- 總覽頁 -->
+        <section id="overview" class="page-section active">
+            <h2 class="section-title">總覽</h2>
+            
+            <div class="overview-grid">
+                <!-- 本月收支統計 -->
+                <div class="overview-card summary-card">
+                    <h3>本月收支統計</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">收入</span>
+                            <span class="stat-value income" id="month-income">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">支出</span>
+                            <span class="stat-value expense" id="month-expense">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">結餘</span>
+                            <span class="stat-value balance" id="month-balance">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 收支圖表 -->
+                <div class="overview-card chart-card">
+                    <h3>收支趨勢</h3>
+                    <div class="chart-container">
+                        <canvas id="income-expense-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 支出分類 -->
+                <div class="overview-card chart-card">
+                    <h3>支出分類</h3>
+                    <div class="chart-container">
+                        <canvas id="expense-category-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 即將到期提醒 -->
+                <div class="overview-card reminder-card">
+                    <h3>近期提醒</h3>
+                    <div id="upcoming-reminders" class="reminder-list">
+                        <div class="loading-text">載入中...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 交易記錄頁 -->
+        <section id="transactions" class="page-section">
+            <h2 class="section-title">交易記錄</h2>
+            
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="transaction-type">類型</label>
+                    <select id="transaction-type">
+                        <option value="all">全部</option>
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date-range">時間範圍</label>
+                    <select id="date-range">
+                        <option value="this-month">本月</option>
+                        <option value="last-month">上月</option>
+                        <option value="this-week">本週</option>
+                        <option value="last-week">上週</option>
+                        <option value="custom">自訂</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="custom-date-range" style="display: none;">
+                    <input type="date" id="start-date">
+                    <span>至</span>
+                    <input type="date" id="end-date">
+                </div>
+                
+                <button id="apply-filter" class="primary-btn">套用篩選</button>
+            </div>
+            
+            <div class="transactions-container">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>類型</th>
+                            <th>分類</th>
+                            <th>項目</th>
+                            <th>金額</th>
+                            <th>帳戶</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-body">
+                        <tr>
+                            <td colspan="7" class="loading-text">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="pagination">
+                    <button id="prev-page" class="page-btn" disabled>&lt; 上一頁</button>
+                    <span id="page-info">第 1 頁</span>
+                    <button id="next-page" class="page-btn" disabled>下一頁 &gt;</button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 提醒事項頁 -->
+        <section id="reminders" class="page-section">
+            <h2 class="section-title">提醒事項</h2>
+            
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="reminder-status">狀態</label>
+                    <select id="reminder-status">
+                        <option value="pending">未完成</option>
+                        <option value="completed">已完成</option>
+                        <option value="all">全部</option>
+                    </select>
+                </div>
+                
+                <button id="add-reminder" class="primary-btn">新增提醒</button>
+            </div>
+            
+            <div class="reminders-container">
+                <div id="reminders-list" class="reminders-list">
+                    <div class="loading-text">載入中...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 帳戶管理頁 -->
+        <section id="accounts" class="page-section">
+            <h2 class="section-title">帳戶管理</h2>
+            
+            <div class="accounts-header">
+                <button id="add-account" class="primary-btn">新增帳戶</button>
+            </div>
+            
+            <div class="accounts-grid" id="accounts-grid">
+                <div class="loading-text">載入中...</div>
+            </div>
+        </section>
+        
+        <!-- 分類管理頁 -->
+        <section id="categories" class="page-section">
+            <h2 class="section-title">分類管理</h2>
+            
+            <div class="categories-header">
+                <div class="categories-filters">
+                    <label for="category-type-filter">類型:</label>
+                    <select id="category-type-filter">
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                <button id="add-category" class="primary-btn">新增分類</button>
+            </div>
+            
+            <div class="categories-container">
+                <table class="categories-table">
+                    <thead>
+                        <tr>
+                            <th>圖標</th>
+                            <th>名稱</th>
+                            <th>類型</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categories-body">
+                        <tr>
+                            <td colspan="4" class="loading-text">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- 報表頁面 -->
+        <section id="reports" class="page-section">
+            <h2 class="section-title">財務報表</h2>
+            
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="report-type">報表類型</label>
+                    <select id="report-type">
+                        <option value="expense">支出分析</option>
+                        <option value="income">收入分析</option>
+                        <option value="balance">收支平衡</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="report-date-range">時間範圍</label>
+                    <select id="report-date-range">
+                        <option value="this-month">本月</option>
+                        <option value="last-month">上月</option>
+                        <option value="this-year">今年</option>
+                        <option value="last-year">去年</option>
+                        <option value="custom">自訂</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="report-custom-date-range" style="display: none;">
+                    <input type="date" id="report-start-date">
+                    <span>至</span>
+                    <input type="date" id="report-end-date">
+                </div>
+                
+                <button id="apply-report-filter" class="primary-btn">生成報表</button>
+            </div>
+            
+            <div class="reports-container">
+                <!-- 報表摘要卡片 -->
+                <div class="report-summary-card">
+                    <div class="summary-header">
+                        <h3 id="report-title">報表摘要</h3>
+                        <span id="report-date-range-text">2023年1月</span>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">總金額</span>
+                            <span class="summary-value" id="report-total-amount">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">交易筆數</span>
+                            <span class="summary-value" id="report-transaction-count">-</span>
+                        </div>
+                        <div class="summary-item" id="report-balance-container" style="display: none;">
+                            <span class="summary-label">結餘</span>
+                            <span class="summary-value balance" id="report-balance">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 圖表區域 -->
+                <div class="report-charts-container">
+                    <!-- 分類圓餅圖 -->
+                    <div class="report-chart-card">
+                        <h3>分類佔比</h3>
+                        <div class="chart-container">
+                            <canvas id="report-category-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 時間趨勢圖 -->
+                    <div class="report-chart-card">
+                        <h3>時間趨勢</h3>
+                        <div class="chart-container">
+                            <canvas id="report-trend-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 明細表格 -->
+                <div class="report-details-card">
+                    <h3>交易明細</h3>
+                    <div class="report-table-container">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>分類</th>
+                                    <th>項目</th>
+                                    <th>金額</th>
+                                    <th>帳戶</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-details-body">
+                                <tr>
+                                    <td colspan="5" class="loading-text">載入中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 匯出按鈕 -->
+                <div class="report-export-buttons">
+                    <button id="export-report-excel" class="secondary-btn">匯出為Excel</button>
+                    <button id="export-report-pdf" class="secondary-btn">匯出為PDF</button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 設定頁 -->
+        <section id="settings" class="page-section">
+            <h2 class="section-title">設定</h2>
+            
+            <div class="settings-card">
+                <h3>個人資料</h3>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="display-name">顯示名稱</label>
+                        <input type="text" id="display-name" placeholder="您的名稱">
+                    </div>
+                    <button id="save-profile" class="primary-btn">儲存</button>
+                </div>
+            </div>
+            
+            <div class="settings-card">
+                <h3>預算設定</h3>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="monthly-budget">月度預算</label>
+                        <input type="number" id="monthly-budget" placeholder="請輸入金額">
+                    </div>
+                    <button id="save-budget" class="primary-btn">儲存</button>
+                </div>
+            </div>
+            
+            <div class="settings-card">
+                <h3>資料匯出</h3>
+                <div class="export-buttons">
+                    <button id="export-excel" class="secondary-btn">匯出為Excel</button>
+                    <button id="export-pdf" class="secondary-btn">匯出為PDF</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 LINE 智能記帳與提醒助手</p>
+        </div>
+    </footer>
+    
+    <!-- 新增交易模態框 -->
+    <div class="modal" id="transaction-modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>新增交易</h3>
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label for="modal-transaction-type">類型</label>
+                    <select id="modal-transaction-type">
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transaction-date">日期</label>
+                    <input type="date" id="transaction-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="transaction-amount">金額</label>
+                    <input type="number" id="transaction-amount" required placeholder="請輸入金額">
+                </div>
+                <div class="form-group">
+                    <label for="transaction-category">分類</label>
+                    <select id="transaction-category">
+                        <!-- 分類將由JS動態生成 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transaction-item">項目</label>
+                    <input type="text" id="transaction-item" placeholder="請輸入項目名稱">
+                </div>
+                <div class="form-group">
+                    <label for="transaction-account">帳戶</label>
+                    <select id="transaction-account">
+                        <!-- 帳戶將由JS動態生成 -->
+                    </select>
+                </div>
+                <button type="submit" class="primary-btn">儲存</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 新增提醒模態框 -->
+    <div class="modal" id="reminder-modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>新增提醒</h3>
+            <form id="reminder-form">
+                <div class="form-group">
+                    <label for="reminder-content">提醒內容</label>
+                    <input type="text" id="reminder-content" required placeholder="請輸入提醒內容">
+                </div>
+                <div class="form-group">
+                    <label for="reminder-date">日期</label>
+                    <input type="date" id="reminder-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-time">時間</label>
+                    <input type="time" id="reminder-time" required>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-repeat">重複</label>
+                    <select id="reminder-repeat">
+                        <option value="none">不重複</option>
+                        <option value="daily">每天</option>
+                        <option value="weekly">每週</option>
+                        <option value="monthly">每月</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-before">提前提醒</label>
+                    <select id="reminder-before">
+                        <option value="0">不提前</option>
+                        <option value="5">5分鐘</option>
+                        <option value="10">10分鐘</option>
+                        <option value="15">15分鐘</option>
+                        <option value="30">30分鐘</option>
+                        <option value="60">1小時</option>
+                    </select>
+                </div>
+                <button type="submit" class="primary-btn">儲存</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 新增分類模態框 -->
+    <div class="modal" id="category-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-category-modal">&times;</span>
+            <h3 id="category-modal-title">新增分類</h3>
+            <form id="category-form">
+                <input type="hidden" id="category-id" value="new">
+                
+                <div class="form-group">
+                    <label for="category-type">類型</label>
+                    <select id="category-type">
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="category-name">名稱</label>
+                    <input type="text" id="category-name" required placeholder="請輸入分類名稱">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category-icon">圖標 (表情符號)</label>
+                    <input type="text" id="category-icon" placeholder="例如: 🍔 或 💰">
+                </div>
+                
+                <div class="emoji-suggestions">
+                    <div class="emoji-group">
+                        <h4>常用支出</h4>
+                        <div class="emoji-grid">
+                            <span class="emoji" data-emoji="🍔">🍔</span>
+                            <span class="emoji" data-emoji="🍕">🍕</span>
+                            <span class="emoji" data-emoji="🍣">🍣</span>
+                            <span class="emoji" data-emoji="🍜">🍜</span>
+                            <span class="emoji" data-emoji="🛒">🛒</span>
+                            <span class="emoji" data-emoji="👕">👕</span>
+                            <span class="emoji" data-emoji="🚕">🚕</span>
+                            <span class="emoji" data-emoji="🚌">🚌</span>
+                            <span class="emoji" data-emoji="🏠">🏠</span>
+                            <span class="emoji" data-emoji="📚">📚</span>
+                            <span class="emoji" data-emoji="💊">💊</span>
+                            <span class="emoji" data-emoji="🎬">🎬</span>
+                        </div>
+                    </div>
+                    <div class="emoji-group">
+                        <h4>常用收入</h4>
+                        <div class="emoji-grid">
+                            <span class="emoji" data-emoji="💰">💰</span>
+                            <span class="emoji" data-emoji="💵">💵</span>
+                            <span class="emoji" data-emoji="💳">💳</span>
+                            <span class="emoji" data-emoji="🏦">🏦</span>
+                            <span class="emoji" data-emoji="💼">💼</span>
+                            <span class="emoji" data-emoji="💸">💸</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-category" class="secondary-btn">取消</button>
+                    <button type="submit" class="primary-btn">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        // 註冊 Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+              .then(reg => console.log('Service Worker 註冊成功:', reg))
+              .catch(err => console.log('Service Worker 註冊失敗:', err));
+        }
+    </script>
+</body>
+</html> 
