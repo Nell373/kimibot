@@ -8,7 +8,12 @@ from functools import wraps
 from flask import Flask, request, abort, jsonify, render_template, send_from_directory, redirect, url_for, session
 
 # 將當前目錄加入sys.path，確保可以導入當前目錄下的模塊
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+# 輸出Python路徑以便調試
+print("Python路徑：")
+print(sys.path)
 
 # 更新LINE Bot SDK導入
 from linebot.v3 import WebhookHandler
@@ -26,6 +31,8 @@ from linebot.v3.messaging import (
 from dotenv import load_dotenv
 import requests
 import sqlite3
+
+# 手動導入 database 包
 from database.db_utils import DatabaseUtils
 from handlers.message_handler import MessageHandler
 from scheduler.reminder_scheduler import ReminderScheduler
@@ -57,30 +64,46 @@ app.secret_key = os.environ.get('SESSION_SECRET', os.urandom(24).hex())
 
 # 初始化 LINE API
 try:
+    # 記錄環境變量狀態（不包含完整的敏感信息）
+    channel_secret = os.environ.get('LINE_CHANNEL_SECRET', '')
+    channel_token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '')
+    logger.info(f"LINE_CHANNEL_SECRET 長度: {len(channel_secret)}")
+    logger.info(f"LINE_CHANNEL_ACCESS_TOKEN 長度: {len(channel_token)}")
+    logger.info(f"WEBHOOK_URL: {os.environ.get('WEBHOOK_URL', '未設置')}")
+    
     # 使用新版SDK初始化
+    logger.info("開始初始化LINE Bot API...")
     configuration = Configuration(
-        access_token=os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '')
+        access_token=channel_token
     )
-    handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET', ''))
+    handler = WebhookHandler(channel_secret)
     
     # 創建API客戶端
+    logger.info("創建LINE API客戶端...")
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
     
     # 檢查憑證是否有效
     if not is_development:
-        # 測試連接 (在v3中，不同的方式測試連接)
-        with ApiClient(configuration) as api_client:
-            from linebot.v3.messaging import MessagingApiBlob
-            bot_info_api = MessagingApiBlob(api_client)
-            # 獲取機器人資訊
-            bot_info_api.get_bot_info()
-        logger.info("已成功連接到 LINE 平台")
+        try:
+            # 測試連接 (在v3中，不同的方式測試連接)
+            logger.info("測試LINE Bot API連接...")
+            with ApiClient(configuration) as api_client:
+                from linebot.v3.messaging import MessagingApiBlob
+                bot_info_api = MessagingApiBlob(api_client)
+                # 獲取機器人資訊
+                bot_info = bot_info_api.get_bot_info()
+                logger.info(f"已成功連接到 LINE 平台，機器人名稱: {bot_info.display_name if hasattr(bot_info, 'display_name') else '未知'}")
+        except Exception as connection_error:
+            logger.error(f"LINE Bot API連接測試失敗: {str(connection_error)}")
+            logger.error(f"錯誤詳情: {traceback.format_exc()}")
+            raise
     else:
         logger.warning("開發環境模式啟動，部分功能將被模擬")
 
 except Exception as e:
     logger.error(f"連接 LINE 平台失敗: {str(e)}")
+    logger.error(f"錯誤詳情: {traceback.format_exc()}")
     if is_development:
         logger.warning("在開發環境中繼續運行，使用模擬物件")
         # 在開發環境中，如果 LINE 憑證無效，我們可以繼續使用模擬物件
@@ -89,6 +112,7 @@ except Exception as e:
         handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET', 'test_secret'))
     else:
         # 在生產環境，如果憑證無效則終止應用
+        logger.critical("在生產環境中無法連接LINE平台，應用將終止")
         raise
 
 # 初始化資料庫工具
@@ -218,10 +242,34 @@ def service_worker():
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康檢查端點"""
-    return jsonify({
+    is_line_initialized = True
+    line_status = "ok"
+    
+    try:
+        # 簡單的連接測試
+        if not is_development and 'line_bot_api' in globals():
+            with ApiClient(configuration) as api_client:
+                bot_info_api = MessagingApiBlob(api_client)
+                bot_info_api.get_bot_info()
+    except Exception as e:
+        is_line_initialized = False
+        line_status = str(e)[:100]  # 截斷錯誤信息以避免過長
+    
+    app_info = {
         'status': 'ok',
-        'timestamp': datetime.now().isoformat()
-    }), 200
+        'timestamp': datetime.now().isoformat(),
+        'environment': os.environ.get('FLASK_ENV', 'unknown'),
+        'line_bot': {
+            'initialized': is_line_initialized,
+            'status': line_status,
+            'secret_length': len(os.environ.get('LINE_CHANNEL_SECRET', '')),
+            'token_length': len(os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '')),
+            'webhook_url': os.environ.get('WEBHOOK_URL', 'not set')
+        },
+        'message': 'Kimibot is running!'
+    }
+    
+    return jsonify(app_info), 200
 
 # LINE Webhook 入口
 @app.route('/api/webhook', methods=['POST'])
