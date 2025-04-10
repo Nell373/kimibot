@@ -7,13 +7,31 @@ from datetime import datetime, timedelta, date
 from functools import wraps
 from flask import Flask, request, abort, jsonify, render_template, send_from_directory, redirect, url_for, session
 
-# 將當前目錄加入sys.path，確保可以導入當前目錄下的模塊
+# 將當前目錄加入到 Python 模塊搜索路徑
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-# 輸出Python路徑以便調試
-print("Python路徑：")
-print(sys.path)
+# 設定日誌
+logging.basicConfig(
+    level=logging.INFO if os.environ.get('LOG_LEVEL') != 'debug' else logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# 使用一致的絕對導入方式
+try:
+    # 直接使用絕對導入
+    from database.db_utils import DatabaseUtils
+    logger.info("成功導入 database.db_utils")
+except ImportError as e:
+    logger.error(f"無法導入 database.db_utils: {str(e)}")
+    logger.error(f"Python 路徑: {sys.path}")
+    logger.error(f"當前目錄: {current_dir}")
+    if os.path.exists(os.path.join(current_dir, 'database')):
+        logger.error(f"database 目錄內容: {os.listdir(os.path.join(current_dir, 'database'))}")
+    else:
+        logger.error(f"database 目錄不存在!")
+    raise
 
 # 更新LINE Bot SDK導入
 from linebot.v3 import WebhookHandler
@@ -31,9 +49,6 @@ from linebot.v3.messaging import (
 from dotenv import load_dotenv
 import requests
 import sqlite3
-
-# 手動導入 database 包
-from database.db_utils import DatabaseUtils
 from handlers.message_handler import MessageHandler
 from scheduler.reminder_scheduler import ReminderScheduler
 from parsers.text_parser import TextParser
@@ -42,13 +57,6 @@ import traceback
 
 # 載入環境變數
 load_dotenv()
-
-# 設定日誌
-logging.basicConfig(
-    level=logging.INFO if os.environ.get('LOG_LEVEL') != 'debug' else logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 # 判斷是否為開發環境
 is_development = os.environ.get('FLASK_ENV') == 'development'
