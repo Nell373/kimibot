@@ -11,7 +11,7 @@ from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import (
     MessageEvent, PostbackEvent, 
-    TextMessageContent, UserSource
+    TextMessageContent, UserSource, GroupSource, RoomSource
 )
 from linebot.v3.messaging import (
     Configuration, ApiClient, MessagingApi,
