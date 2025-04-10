@@ -1,4 +1,4 @@
-app = "line-finance-assistant"
+app = "kimibot"
 primary_region = "nrt"  # Tokyo region
 kill_signal = "SIGINT"
 kill_timeout = 5
@@ -16,9 +16,8 @@ kill_timeout = 5
   destination = "/app/database"
 
 [[services]]
-  http_checks = []
-  internal_port = 8080
   protocol = "tcp"
+  internal_port = 8080
   script_checks = []
   
   [services.concurrency]
